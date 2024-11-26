@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Card from './components/Card';
 
 function App() {
@@ -7,23 +7,40 @@ function App() {
   const [bestScore, setBestScore] = useState(0);
   const [clickedCards, setClickedCards] = useState([]);
 
-  const [pokemons, setPokesmons] = useState([
-    {
-      id: 1,
-      name: "bulbasaur",
-      image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
-    },
-    {
-      id: 4,
-      name: "charmander",
-      image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png"
-    },
-    {
-      id: 7,
-      name: "squirtle",
-      image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"
-    }
-  ]);
+  const [pokemons, setPokesmons] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPokemons = async () => {
+      try {
+        const pokemonIds = [
+          1, 4, 7, 25, 133, 150,  
+          6, 3, 9, 39, 35, 92,   
+        ];
+        
+        const pokemonPromises = pokemonIds.map(id =>
+          fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
+            .then(response => response.json())
+        );
+
+        const pokemonData = await Promise.all(pokemonPromises);
+
+        const formattedData = pokemonData.map(pokemon => ({
+          id: pokemon.id,
+          name: pokemon.name,
+          image: pokemon.sprites.front_default
+        }));
+
+        setPokesmons(formattedData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching Pokemon:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchPokemons();
+  }, []);
 
   const shuffleCards = () => {
     const shuffled = [...pokemons];
@@ -34,9 +51,6 @@ function App() {
     setPokesmons(shuffled);
   };
   
-  
-  //click handler
-
   const handleCardClick = (id) => {
     shuffleCards();
     
@@ -51,22 +65,51 @@ function App() {
         setBestScore(newScore);
       }
     }
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '2rem',
+        fontSize: '1.5rem'
+      }}>
+        Loading Pokémon...
+      </div>
+    );
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
-      <h1 style={{ textAlign: 'center' }}>Pokemon Memory Game</h1>
-      <div style={{ 
+    <div style={{ 
+      maxWidth: '1000px', 
+      margin: '0 auto', 
+      padding: '1rem',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <h1 style={{ 
         textAlign: 'center', 
-        margin: '1rem',
+        color: '#333',
+        marginBottom: '1rem'
+      }}>
+        Pokémon Memory Game
+      </h1>
+      <div style={{ 
+        maxWidth:'200px',
+        textAlign: 'center', 
+        margin: 'auto',
         padding: '1rem',
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#4379F2',
         borderRadius: '8px'
       }}>
         <p>Current Score: {currentScore}</p>
         <p>Best Score: {bestScore}</p>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '1rem',
+        justifyContent: 'center'
+      }}>
         {pokemons.map(pokemon => (
           <Card 
             key={pokemon.id}
